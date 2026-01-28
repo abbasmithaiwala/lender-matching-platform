@@ -5,6 +5,7 @@ alembic==1.18.1
 pydantic==2.12.4
 pydantic-settings==2.12.0
 psycopg2-binary==2.9.11
+asyncpg==0.30.0  # Async PostgreSQL driver
 python-multipart==0.0.22
 # For PDF parsing & LLM integration via OpenRouter
 pypdf==6.6.2

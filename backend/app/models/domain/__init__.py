@@ -7,6 +7,7 @@ from app.models.domain.application import (
     PersonalGuarantor,
 )
 from app.models.domain.lender import Lender, PolicyProgram, PolicyRule
+from app.models.domain.match import MatchResult, RuleEvaluation, UnderwritingRun
 
 __all__ = [
     "Business",
@@ -16,4 +17,7 @@ __all__ = [
     "Lender",
     "PolicyProgram",
     "PolicyRule",
+    "UnderwritingRun",
+    "MatchResult",
+    "RuleEvaluation",
 ]

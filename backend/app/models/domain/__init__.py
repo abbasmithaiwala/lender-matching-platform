@@ -6,10 +6,14 @@ from app.models.domain.application import (
     LoanApplication,
     PersonalGuarantor,
 )
+from app.models.domain.lender import Lender, PolicyProgram, PolicyRule
 
 __all__ = [
     "Business",
     "PersonalGuarantor",
     "Equipment",
     "LoanApplication",
+    "Lender",
+    "PolicyProgram",
+    "PolicyRule",
 ]

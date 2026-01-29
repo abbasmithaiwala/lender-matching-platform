@@ -5,8 +5,8 @@ POLICY_EXTRACTION_PROMPT = """You are analyzing a lender's credit policy documen
 1. Lender Information:
    - name (string): The lender's name
    - description (string): Brief description of the lender
-   - min_loan_amount (number): Minimum loan amount in dollars
-   - max_loan_amount (number): Maximum loan amount in dollars
+   - min_loan_amount (number): Minimum loan amount in dollars (REQUIRED - search for "minimum loan", "min amount", etc. If not found, use 10000)
+   - max_loan_amount (number): Maximum loan amount in dollars (REQUIRED - search for "maximum loan", "max amount", etc. If not found, use 5000000)
    - excluded_states (array): State codes where lender doesn't operate (e.g., ["CA", "NV", "ND", "VT"])
    - excluded_industries (array): Industries the lender doesn't serve (e.g., ["Cannabis", "Gambling"])
 
@@ -24,11 +24,18 @@ POLICY_EXTRACTION_PROMPT = """You are analyzing a lender's credit policy documen
      - {{"industry": ["Medical", "Healthcare"]}} - Industry-specific programs
      - {{"equipment_type": ["Medical Equipment"]}} - Equipment-specific programs
      NOTE: These are checked BEFORE rule evaluation to select the right program
-   - rate_metadata (object): Rate tables and adjustments
+   - rate_metadata (object): Rate tables and adjustments (IMPORTANT: Extract all rate information from the document)
      Structure:
-     - base_rates (array): [{{"min_amount": 10000, "max_amount": 50000, "min_term": 12, "max_term": 60, "rate": 7.25}}]
-     - adjustments (array): [{{"condition": "equipment_age > 15", "delta": 0.5, "description": "Aged equipment"}}]
-     NOTE: Rates should be stored as numbers (e.g., 7.25 for 7.25%)
+     - base_rates (array): REQUIRED - Extract rate tables showing rates by loan amount/term
+       Example: [{{"min_amount": 10000, "max_amount": 50000, "min_term": 12, "max_term": 60, "rate": 7.25}}]
+       Look for: rate tables, pricing grids, rate sheets, APR tables, factor rates
+     - adjustments (array): Extract any rate adjustments or add-ons
+       Example: [{{"condition": "equipment_age > 15", "delta": 0.5, "description": "Aged equipment"}}]
+       Look for: rate adjustments, pricing exceptions, add-ons, rate factors
+     NOTE:
+     - Rates should be stored as numbers (e.g., 7.25 for 7.25%, not "7.25%" or "0.0725")
+     - If you find rate ranges like "7.25-9.5%", create entries for min and max
+     - If no explicit rate table exists, leave base_rates empty (do not make up rates)
 
 3. Rules for each program (array):
    Each rule should have:
@@ -69,29 +76,37 @@ POLICY_EXTRACTION_PROMPT = """You are analyzing a lender's credit policy documen
      NOTE: Words like "guidelines", "preferred", "subject to lender discretion" indicate is_mandatory: false
 
 CRITICAL EXTRACTION RULES:
-1. **Lender-level vs Program-level vs Rule-level**:
+1. **Data Completeness**:
+   - min_loan_amount and max_loan_amount are REQUIRED - never use 0
+   - Search thoroughly for rate tables, pricing grids, or rate information
+   - Extract ALL programs/tiers mentioned in the document
+
+2. **Lender-level vs Program-level vs Rule-level**:
    - Lender-level exclusions: States/industries where lender NEVER operates → excluded_states, excluded_industries
    - Program eligibility: Conditions that determine which program to use → eligibility_conditions
    - Rule-level: Specific criteria within a program → rules array
 
-2. **Rate Information**:
+3. **Rate Information**:
    - Rate tables and adjustments go in rate_metadata, NOT in rules
    - Store rates as numbers (7.25, not "7.25%" or "0.0725")
+   - Extract all rate tables, pricing grids, or factor rate information
+   - If no rates found in document, leave base_rates as empty array []
 
-3. **Hard vs Soft Requirements**:
+4. **Hard vs Soft Requirements**:
    - "Must", "Required", "Minimum" = is_mandatory: true
    - "Guideline", "Preferred", "Subject to approval", "May consider" = is_mandatory: false
 
-4. **Program Selection Logic**:
+5. **Program Selection Logic**:
    - If document says "For PayNet deals only" or "Corp only" → put in eligibility_conditions
    - If it's a scoring criterion → put in rules
-
-5. **Extract ALL programs/tiers** mentioned in the document, even if brief
+   - Include minimum loan amounts per program in eligibility_conditions if specified
 
 6. **Default Values**:
    - min_fit_score: 60 (if not specified)
    - weight: 1.0 (if not specified)
    - is_mandatory: true (for explicit requirements), false (for guidelines)
+   - min_loan_amount: 10000 (if not found in document - commercial equipment finance typical minimum)
+   - max_loan_amount: 5000000 (if not found in document - typical maximum)
 
 Document content:
 {content}

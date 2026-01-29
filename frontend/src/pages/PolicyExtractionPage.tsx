@@ -112,8 +112,8 @@ export function PolicyExtractionPage() {
 
     try {
       const result = await policyExtractionService.uploadAndExtract(file, {
-        enhance: true,
-        validate: true,
+        enhance: false,
+        validate: false,
       });
       dispatch({ type: 'UPLOAD_SUCCESS', payload: result });
     } catch (error) {

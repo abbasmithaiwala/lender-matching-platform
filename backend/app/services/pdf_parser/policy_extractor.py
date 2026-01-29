@@ -88,6 +88,15 @@ class PolicyExtractor:
             if "lender" not in extracted_data or "programs" not in extracted_data:
                 raise ValueError("Extracted data missing required fields: 'lender' or 'programs'")
 
+            # Apply safety checks and defaults
+            lender = extracted_data.get("lender", {})
+            if lender.get("min_loan_amount", 0) == 0:
+                logger.warning("min_loan_amount is 0, setting to default 10000")
+                lender["min_loan_amount"] = 10000
+            if lender.get("max_loan_amount", 0) == 0:
+                logger.warning("max_loan_amount is 0, setting to default 5000000")
+                lender["max_loan_amount"] = 5000000
+
             logger.info(
                 f"Successfully extracted: {len(extracted_data.get('programs', []))} programs"
             )
@@ -210,15 +219,19 @@ class PolicyExtractor:
             Enhanced extraction
         """
         try:
+            # Pre-format the prompt with extracted_data and pdf_content
+            formatted_prompt = POLICY_ENHANCEMENT_PROMPT.format(
+                extracted_data=json.dumps(extracted_data, indent=2),
+                pdf_content=pdf_text[:5000],  # Limit context size
+            )
+
             enhanced = await self.llm_extractor.extract_with_prompt(
-                content=pdf_text,
-                prompt=POLICY_ENHANCEMENT_PROMPT.format(
-                    extracted_data=json.dumps(extracted_data, indent=2),
-                    pdf_content=pdf_text[:5000],  # Limit context size
-                ),
+                content="",  # Content already in the prompt
+                prompt=formatted_prompt,
                 response_format={"type": "json_object"},
                 temperature=0.1,  # Lower temperature for consistency
                 max_tokens=8000,
+                skip_format=True,  # Prompt is already formatted
             )
 
             # Check if enhanced data has required structure
@@ -244,15 +257,45 @@ class PolicyExtractor:
             Validation result with errors and suggestions
         """
         try:
+            # Pre-format the prompt with extracted_data
+            formatted_prompt = POLICY_VALIDATION_PROMPT.format(
+                extracted_data=json.dumps(extracted_data, indent=2)
+            )
+
             validation = await self.llm_extractor.extract_with_prompt(
-                content="",
-                prompt=POLICY_VALIDATION_PROMPT.format(
-                    extracted_data=json.dumps(extracted_data, indent=2)
-                ),
+                content="",  # Content already in the prompt
+                prompt=formatted_prompt,
                 response_format={"type": "json_object"},
                 temperature=0.1,
                 max_tokens=2000,
+                skip_format=True,  # Prompt is already formatted
             )
+
+            logger.debug(f"Validation response type: {type(validation)}")
+            logger.debug(f"Validation response keys: {validation.keys() if isinstance(validation, dict) else 'not a dict'}")
+
+            # Check for parsing errors
+            if "parsing_error" in validation:
+                logger.warning(f"Validation JSON parsing issue: {validation['parsing_error']}")
+                if "raw_content" in validation:
+                    try:
+                        validation = json.loads(validation["raw_content"])
+                    except json.JSONDecodeError as e:
+                        logger.error(f"Failed to parse validation raw_content: {e}")
+                        logger.error(f"Raw content: {validation['raw_content'][:500]}")
+                        return {
+                            "valid": False,
+                            "errors": [{"field": "validation", "message": f"JSON parsing error: {e}", "severity": "error"}],
+                            "suggestions": [],
+                        }
+
+            # Ensure required fields exist
+            if "valid" not in validation:
+                validation["valid"] = False
+            if "errors" not in validation:
+                validation["errors"] = []
+            if "suggestions" not in validation:
+                validation["suggestions"] = []
 
             logger.info(
                 f"Validation complete: {validation.get('valid', False)}, "
@@ -262,7 +305,8 @@ class PolicyExtractor:
             return validation
 
         except Exception as e:
-            logger.warning(f"Validation failed: {e}")
+            logger.error(f"Validation failed with exception: {type(e).__name__}: {e}")
+            logger.error(f"Exception details:", exc_info=True)
             return {
                 "valid": False,
                 "errors": [{"field": "validation", "message": str(e), "severity": "error"}],

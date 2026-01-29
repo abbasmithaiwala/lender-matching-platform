@@ -30,8 +30,8 @@ _extraction_cache: dict[UUID, dict] = {}
 @router.post("/upload", response_model=ExtractionResult, status_code=status.HTTP_201_CREATED)
 async def upload_and_extract_pdf(
     file: Annotated[UploadFile, File(description="PDF file to extract policies from")],
-    enhance: bool = True,
-    validate_extraction: bool = True,
+    enhance: bool = False,
+    validate_extraction: bool = False,
 ) -> ExtractionResult:
     """
     Upload a PDF file and extract lender policies.
@@ -81,8 +81,20 @@ async def upload_and_extract_pdf(
             validate=validate_extraction,
         )
 
+        # Log result structure for debugging
+        logger.debug(f"Result keys: {result.keys()}")
+        if "extracted_data" in result and result["extracted_data"]:
+            logger.debug(f"Extracted data type: {type(result['extracted_data'])}")
+            if isinstance(result["extracted_data"], dict):
+                logger.debug(f"Extracted data keys: {result['extracted_data'].keys()}")
+
         # Convert to ExtractionResult
-        extraction_result = ExtractionResult(**result)
+        try:
+            extraction_result = ExtractionResult(**result)
+        except Exception as e:
+            logger.error(f"Failed to convert result to ExtractionResult: {e}")
+            logger.error(f"Result structure: {result}")
+            raise
 
         # Store in cache
         _extraction_cache[extraction_result.extraction_id] = extraction_result.model_dump()

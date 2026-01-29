@@ -175,10 +175,9 @@ export function PolicyEditor({ lender, programs, onUpdate }: PolicyEditorProps) 
     dispatch({ type: 'ADD_PROGRAM' });
   };
 
-  // Call onUpdate whenever the state changes
-  useEffect(() => {
+  const saveChanges = () => {
     onUpdate(state.editedLender, state.editedPrograms);
-  }, [state.editedLender, state.editedPrograms]);
+  };
 
   return (
     <div className="space-y-6">
@@ -189,12 +188,18 @@ export function PolicyEditor({ lender, programs, onUpdate }: PolicyEditorProps) 
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="lender-name">Lender Name</Label>
+            <Label htmlFor="lender-name">
+              Lender Name <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="lender-name"
               value={state.editedLender.name}
               onChange={(e) => updateLenderField('name', e.target.value)}
+              className={!state.editedLender.name ? 'border-red-500' : ''}
             />
+            {!state.editedLender.name && (
+              <p className="text-xs text-red-500">Required field - please enter lender name</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -209,22 +214,34 @@ export function PolicyEditor({ lender, programs, onUpdate }: PolicyEditorProps) 
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="min-loan">Min Loan Amount</Label>
+              <Label htmlFor="min-loan">
+                Min Loan Amount <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="min-loan"
                 type="number"
                 value={state.editedLender.min_loan_amount}
                 onChange={(e) => updateLenderField('min_loan_amount', parseFloat(e.target.value))}
+                className={!state.editedLender.min_loan_amount || state.editedLender.min_loan_amount === 0 ? 'border-red-500' : ''}
               />
+              {(!state.editedLender.min_loan_amount || state.editedLender.min_loan_amount === 0) && (
+                <p className="text-xs text-red-500">Required - typical minimum is $10,000</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="max-loan">Max Loan Amount</Label>
+              <Label htmlFor="max-loan">
+                Max Loan Amount <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="max-loan"
                 type="number"
                 value={state.editedLender.max_loan_amount}
                 onChange={(e) => updateLenderField('max_loan_amount', parseFloat(e.target.value))}
+                className={!state.editedLender.max_loan_amount || state.editedLender.max_loan_amount === 0 ? 'border-red-500' : ''}
               />
+              {(!state.editedLender.max_loan_amount || state.editedLender.max_loan_amount === 0) && (
+                <p className="text-xs text-red-500">Required - typical maximum is $5,000,000</p>
+              )}
             </div>
           </div>
 
@@ -314,37 +331,56 @@ export function PolicyEditor({ lender, programs, onUpdate }: PolicyEditorProps) 
               <CardContent className="p-6 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor={`prog-name-${programIndex}`}>Program Name</Label>
+                    <Label htmlFor={`prog-name-${programIndex}`}>
+                      Program Name <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id={`prog-name-${programIndex}`}
                       value={program.program_name}
                       onChange={(e) =>
                         updateProgramField(programIndex, 'program_name', e.target.value)
                       }
+                      className={!program.program_name ? 'border-red-500' : ''}
                     />
+                    {!program.program_name && (
+                      <p className="text-xs text-red-500">Required field</p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`prog-code-${programIndex}`}>Program Code</Label>
+                    <Label htmlFor={`prog-code-${programIndex}`}>
+                      Program Code <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id={`prog-code-${programIndex}`}
                       value={program.program_code}
                       onChange={(e) =>
                         updateProgramField(programIndex, 'program_code', e.target.value)
                       }
+                      className={!program.program_code ? 'border-red-500' : ''}
                     />
+                    {!program.program_code && (
+                      <p className="text-xs text-red-500">Required field (e.g., "A", "Tier 1")</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor={`prog-tier-${programIndex}`}>Credit Tier</Label>
+                    <Label htmlFor={`prog-tier-${programIndex}`}>
+                      Credit Tier <span className="text-red-500">*</span>
+                    </Label>
                     <Input
                       id={`prog-tier-${programIndex}`}
                       value={program.credit_tier}
                       onChange={(e) =>
                         updateProgramField(programIndex, 'credit_tier', e.target.value)
                       }
+                      className={!program.credit_tier ? 'border-red-500' : ''}
+                      placeholder="e.g., A, B, C"
                     />
+                    {!program.credit_tier && (
+                      <p className="text-xs text-red-500">Required (e.g., "A", "B", "C")</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor={`prog-score-${programIndex}`}>Min Fit Score</Label>
@@ -355,7 +391,9 @@ export function PolicyEditor({ lender, programs, onUpdate }: PolicyEditorProps) 
                       onChange={(e) =>
                         updateProgramField(programIndex, 'min_fit_score', parseFloat(e.target.value))
                       }
+                      placeholder="Default: 60"
                     />
+                    <p className="text-xs text-muted-foreground">0-100, default is 60</p>
                   </div>
                 </div>
 
@@ -368,8 +406,21 @@ export function PolicyEditor({ lender, programs, onUpdate }: PolicyEditorProps) 
                       updateProgramField(programIndex, 'description', e.target.value)
                     }
                     rows={2}
+                    placeholder="Brief description of this program"
                   />
                 </div>
+
+                {/* Rate Metadata Warning */}
+                {(!program.rate_metadata?.base_rates || program.rate_metadata.base_rates.length === 0) && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-sm text-yellow-800 font-medium">
+                      ⚠️ Rate Information Missing
+                    </p>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      This program has no rate tables defined. Add rate information in the JSON editor below or the rules section.
+                    </p>
+                  </div>
+                )}
 
                 {/* Rules */}
                 <div className="pt-4 border-t">
@@ -386,6 +437,17 @@ export function PolicyEditor({ lender, programs, onUpdate }: PolicyEditorProps) 
                     </Button>
                   </div>
 
+                  {(!program.rules || program.rules.length === 0) && (
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-3">
+                      <p className="text-sm text-yellow-800 font-medium">
+                        ⚠️ No Rules Defined
+                      </p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        This program has no underwriting rules. Click "Add Rule" to define credit, loan amount, or equipment requirements.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="space-y-3">
                     {program.rules?.map((rule, ruleIndex) => (
                       <div
@@ -394,28 +456,38 @@ export function PolicyEditor({ lender, programs, onUpdate }: PolicyEditorProps) 
                       >
                         <div className="flex-1 space-y-3">
                           <div className="grid grid-cols-2 gap-3">
-                            <Input
-                              value={rule.rule_name}
-                              onChange={(e) =>
-                                updateRule(programIndex, ruleIndex, {
-                                  ...rule,
-                                  rule_name: e.target.value,
-                                })
-                              }
-                              placeholder="Rule Name"
-                              className="h-8 text-sm"
-                            />
-                            <Input
-                              value={rule.rule_type}
-                              onChange={(e) =>
-                                updateRule(programIndex, ruleIndex, {
-                                  ...rule,
-                                  rule_type: e.target.value,
-                                })
-                              }
-                              placeholder="Rule Type"
-                              className="h-8 text-sm"
-                            />
+                            <div>
+                              <Input
+                                value={rule.rule_name}
+                                onChange={(e) =>
+                                  updateRule(programIndex, ruleIndex, {
+                                    ...rule,
+                                    rule_name: e.target.value,
+                                  })
+                                }
+                                placeholder="Rule Name *"
+                                className={`h-8 text-sm ${!rule.rule_name ? 'border-red-500' : ''}`}
+                              />
+                              {!rule.rule_name && (
+                                <p className="text-xs text-red-500 mt-1">Required</p>
+                              )}
+                            </div>
+                            <div>
+                              <Input
+                                value={rule.rule_type}
+                                onChange={(e) =>
+                                  updateRule(programIndex, ruleIndex, {
+                                    ...rule,
+                                    rule_type: e.target.value,
+                                  })
+                                }
+                                placeholder="Rule Type * (e.g., min_fico)"
+                                className={`h-8 text-sm ${!rule.rule_type ? 'border-red-500' : ''}`}
+                              />
+                              {!rule.rule_type && (
+                                <p className="text-xs text-red-500 mt-1">Required</p>
+                              )}
+                            </div>
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <Input
@@ -447,18 +519,23 @@ export function PolicyEditor({ lender, programs, onUpdate }: PolicyEditorProps) 
                               </Label>
                             </div>
                           </div>
-                          <Textarea
-                            value={JSON.stringify(rule.criteria, null, 2)}
-                            onChange={(e) => {
-                              try {
-                                const criteria = JSON.parse(e.target.value);
-                                updateRule(programIndex, ruleIndex, { ...rule, criteria });
-                              } catch { }
-                            }}
-                            placeholder="Criteria (JSON)"
-                            rows={2}
-                            className="font-mono text-xs min-h-[60px]"
-                          />
+                          <div>
+                            <Textarea
+                              value={JSON.stringify(rule.criteria, null, 2)}
+                              onChange={(e) => {
+                                try {
+                                  const criteria = JSON.parse(e.target.value);
+                                  updateRule(programIndex, ruleIndex, { ...rule, criteria });
+                                } catch { }
+                              }}
+                              placeholder='Criteria (JSON) * - e.g., {"min_score": 650}'
+                              rows={2}
+                              className={`font-mono text-xs min-h-[60px] ${!rule.criteria || Object.keys(rule.criteria).length === 0 ? 'border-red-500' : ''}`}
+                            />
+                            {(!rule.criteria || Object.keys(rule.criteria).length === 0) && (
+                              <p className="text-xs text-red-500 mt-1">Required - must be valid JSON</p>
+                            )}
+                          </div>
                         </div>
                         <Button
                           variant="ghost"
@@ -476,6 +553,13 @@ export function PolicyEditor({ lender, programs, onUpdate }: PolicyEditorProps) 
             )}
           </Card>
         ))}
+      </div>
+
+      {/* Save Changes Button */}
+      <div className="flex justify-end">
+        <Button onClick={saveChanges} size="lg" className="min-w-[200px]">
+          Save Changes
+        </Button>
       </div>
     </div>
   );

@@ -63,6 +63,7 @@ class LLMExtractor:
         response_format: Optional[dict] = None,
         temperature: float = 0.2,
         max_tokens: int = 8000,
+        skip_format: bool = False,
     ) -> dict[str, Any]:
         """
         Extract structured data from content using a custom prompt.
@@ -73,6 +74,7 @@ class LLMExtractor:
             response_format: Optional response format specification (e.g., {"type": "json_object"})
             temperature: Sampling temperature (0.0-1.0, lower = more deterministic)
             max_tokens: Maximum tokens in response
+            skip_format: If True, don't format the prompt (already formatted)
 
         Returns:
             Extracted data as dictionary
@@ -86,7 +88,8 @@ class LLMExtractor:
                 "OpenRouter API key not configured. Set OPENROUTER_API_KEY environment variable."
             )
 
-        formatted_prompt = prompt.format(content=content)
+        # Only format the prompt if it hasn't been pre-formatted
+        formatted_prompt = prompt if skip_format else prompt.format(content=content)
 
         for attempt in range(self.max_retries):
             try:
@@ -185,10 +188,11 @@ class LLMExtractor:
         try:
             test_prompt = "Respond with a simple JSON object containing a 'status' field set to 'ok'."
             result = await self.extract_with_prompt(
-                content="Test connection",
+                content="",
                 prompt=test_prompt,
                 response_format={"type": "json_object"},
                 max_tokens=100,
+                skip_format=True,  # Simple prompt doesn't need formatting
             )
 
             if result.get("status") == "ok" or "raw_content" in result:

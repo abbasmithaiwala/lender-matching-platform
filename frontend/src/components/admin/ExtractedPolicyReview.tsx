@@ -1,13 +1,10 @@
-import { useState } from 'react';
-import { AlertCircle, CheckCircle, XCircle, AlertTriangle, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, FileText } from 'lucide-react';
 import type { ExtractionResult, ExtractedLender, ExtractedProgram } from '../../types/policy-extraction';
 import { PolicyEditor } from './PolicyEditor';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-
 interface ExtractedPolicyReviewProps {
   extraction: ExtractionResult;
   onApprove: () => void;
@@ -23,7 +20,6 @@ export function ExtractedPolicyReview({
   onUpdate,
   isApproving,
 }: ExtractedPolicyReviewProps) {
-  const [showValidation, setShowValidation] = useState(true);
 
   if (extraction.status === 'failed') {
     return (
@@ -121,67 +117,6 @@ export function ExtractedPolicyReview({
         </CardContent>
       </Card>
 
-      {/* Validation Results */}
-      {validation && (validation.errors?.length || validation.suggestions?.length) && (
-        <Card className={cn("overflow-hidden border",
-          validation.valid ? "border-blue-200" : "border-yellow-200"
-        )}>
-          <div
-            className={cn("w-full px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors",
-              !showValidation && "border-b-0",
-              showValidation && "border-b"
-            )}
-            onClick={() => setShowValidation(!showValidation)}
-          >
-            <div className="flex items-center space-x-3">
-              <div className={cn("p-1 rounded-full", validation.valid ? "bg-blue-100" : "bg-yellow-100")}>
-                <AlertCircle className={cn("w-4 h-4", validation.valid ? "text-blue-600" : "text-yellow-600")} />
-              </div>
-              <span className="font-semibold text-sm">
-                Validation Results
-                <span className="ml-2 font-normal text-muted-foreground">
-                  ({validation.errors?.length || 0} issues, {validation.suggestions?.length || 0} suggestions)
-                </span>
-              </span>
-            </div>
-            {showValidation ? (
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            )}
-          </div>
-
-          {showValidation && (
-            <div className="p-6 space-y-3 bg-muted/10">
-              {validation.errors?.map((error, index) => (
-                <Alert key={index} variant={error.severity === 'error' ? 'destructive' : 'default'} className={cn(
-                  error.severity === 'warning' && "border-yellow-200 bg-yellow-50 text-yellow-900"
-                )}>
-                  {error.severity === 'error' ? (
-                    <XCircle className="h-4 w-4" />
-                  ) : (
-                    <AlertTriangle className={cn("h-4 w-4", error.severity === 'warning' && "text-yellow-600")} />
-                  )}
-                  <AlertTitle className="capitalize">{error.field}</AlertTitle>
-                  <AlertDescription>
-                    {error.message}
-                  </AlertDescription>
-                </Alert>
-              ))}
-
-              {validation.suggestions?.map((suggestion, index) => (
-                <Alert key={index} className="border-blue-200 bg-blue-50 text-blue-900">
-                  <AlertCircle className="h-4 w-4 text-blue-600" />
-                  <AlertDescription>
-                    {suggestion}
-                  </AlertDescription>
-                </Alert>
-              ))}
-            </div>
-          )}
-        </Card>
-      )}
-
       {/* Policy Editor */}
       <PolicyEditor lender={lender} programs={programs} onUpdate={onUpdate} />
 
@@ -201,7 +136,7 @@ export function ExtractedPolicyReview({
             </Button>
             <Button
               onClick={onApprove}
-              disabled={isApproving || !validation?.valid}
+              disabled={isApproving}
               className="bg-green-600 hover:bg-green-700"
             >
               {isApproving ? (
@@ -218,13 +153,6 @@ export function ExtractedPolicyReview({
             </Button>
           </div>
         </CardContent>
-        {!validation?.valid && (
-          <CardFooter className="pt-0 pb-4 px-6">
-            <p className="text-sm text-destructive font-medium">
-              Please fix all validation errors before approving.
-            </p>
-          </CardFooter>
-        )}
       </Card>
     </div>
   );

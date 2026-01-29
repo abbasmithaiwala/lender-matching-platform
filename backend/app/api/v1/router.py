@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import health, applications, underwriting, lenders, policies
+from app.api.v1.endpoints import health, applications, underwriting, lenders, policies, policy_extraction
 
 api_router = APIRouter()
 
@@ -34,4 +34,10 @@ api_router.include_router(
     policies.router,
     prefix="/policies",
     tags=["policies"],
+)
+
+api_router.include_router(
+    policy_extraction.router,
+    prefix="/policy-extraction",
+    tags=["policy-extraction"],
 )

@@ -64,8 +64,8 @@ class UnderwritingRun(BaseModel):
     # Error Handling
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # Metadata - Store execution context or parameters
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default=dict)
+    # Meta - Store execution context or parameters
+    meta: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default=dict)
 
     # Relationships
     match_results: Mapped[list["MatchResult"]] = relationship(
@@ -139,8 +139,8 @@ class MatchResult(BaseModel):
         Boolean, default=False, nullable=False
     )
 
-    # Metadata - Additional context or details
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default=dict)
+    # Meta - Additional context or details
+    meta: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default=dict)
 
     # Relationships
     underwriting_run: Mapped["UnderwritingRun"] = relationship(

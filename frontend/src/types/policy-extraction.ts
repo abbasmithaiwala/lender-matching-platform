@@ -31,7 +31,7 @@ export interface RateMetadata {
 export interface ExtractedRule {
   rule_type: string;
   rule_name: string;
-  criteria: Record<string, any>;
+  criteria: Record<string, unknown>;
   weight?: number;
   is_mandatory?: boolean;
 }
@@ -42,7 +42,7 @@ export interface ExtractedProgram {
   credit_tier: string;
   min_fit_score?: number;
   description?: string;
-  eligibility_conditions?: Record<string, any>;
+  eligibility_conditions?: Record<string, unknown>;
   rate_metadata?: RateMetadata;
   rules?: ExtractedRule[];
 }
